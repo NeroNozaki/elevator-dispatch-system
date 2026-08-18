@@ -12,4 +12,8 @@ public class Floor {
     int getNumber() {
         return this.number;
     }
+
+    void addRequest(Request request) {
+        requests.add(request);
+    }
 }
