@@ -7,17 +7,33 @@ public class Elevator {
         IDLE,
         DOWN,
     }
-    char name;
-    int position;
-    Direction direction;
-    List<Integer> destinations = new ArrayList<>();
+    private char name;
+    private int position;
+    private Direction direction;
+    private List<Integer> destinations = new ArrayList<>();
 
     Elevator(char name) {
         this.name = name;
+        this.position = (int)(Math.random()*20)+1;
     }
 
     char getName() {
         return this.name;
+    }
+
+    Boolean isMovingAwayFrom(Floor floor) {
+		if (this.direction == Direction.UP) {
+			return this.position > floor.getNumber();
+		} else if (this.direction == Direction.DOWN) {
+			return this.position < floor.getNumber();
+		} else {
+			return false;
+		}
+    }
+
+    @Override
+    public String toString() {
+        return "Elevator = [\n\t name: " + this.name + "\n\t position: floor " + this.position + "\n]";
     }
 }
 

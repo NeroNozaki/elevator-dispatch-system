@@ -42,7 +42,7 @@ class ElevatorSystem {
             makeRequest(command.request);
             break;
         case EXIT:
-            //end simulation
+            exit();
             break;
 
         default:
@@ -73,7 +73,33 @@ class ElevatorSystem {
         floors.get(floor-1).addRequest(new Request(floor, destination));
     }
 
-    void callElevator() {
+    void checkFloors() {
+		for (Floor floor : floors) {
+			if (floor.hasRequests() && !floor.isWaiting()) {
+				callElevator(floor);
+				floor.toggleWaiting();
+			} else {
+				continue;
+			}
+		}
+    }
+
+    List<Elevator> sortElevators(Floor floor) {
+		List<Elevator> sortedElevators = new ArrayList<>();
+		for (Elevator elevator : elevators) {
+			if (!elevator.isMovingAwayFrom(floor)) {
+				sortedElevators.add(elevator);
+			}
+		}
+		
+		// after having the available elevators, sort them by position.
+		// after sorting them by position, if there are any ties, sort based on the position of this.elevators
+		
+		return sortedElevators;
+ 	}
+
+    void callElevator(Floor floor) {
+        List<Elevator> elevatorsSorted = sortElevators(floor);
     }
 
     void step() {
