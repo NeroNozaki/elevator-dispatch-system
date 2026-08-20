@@ -84,22 +84,45 @@ class ElevatorSystem {
 		}
     }
 
-    List<Elevator> sortElevators(Floor floor) {
-		List<Elevator> sortedElevators = new ArrayList<>();
+    List<Elevator> getAvailableElevators(Floor floor) {
+		List<Elevator> available = new ArrayList<>();
 		for (Elevator elevator : elevators) {
 			if (!elevator.isMovingAwayFrom(floor)) {
-				sortedElevators.add(elevator);
+				available.add(elevator);
 			}
 		}
-		
-		// after having the available elevators, sort them by position.
-		// after sorting them by position, if there are any ties, sort based on the position of this.elevators
-		
-		return sortedElevators;
+        sortElevators(available, floor);
+
+		return available;
+    }
+
+    void sortElevators(List<Elevator> elevators, Floor floor) {
+        boolean swapped = false;
+        for (int i = 1; i < elevators.size(); i++) {
+            Elevator prevElevator = elevators.get(i-1);
+            Elevator currElevator = elevators.get(i);
+            int currElevatorDistance = currElevator.distanceFromFloor(floor);
+            int prevElevatorDistance = prevElevator.distanceFromFloor(floor);
+            if ((currElevatorDistance < prevElevatorDistance)
+                ||
+                (currElevatorDistance == prevElevatorDistance &&
+                 currElevator.getName() < prevElevator.getName()))
+                {
+
+                elevators.set(i-1, currElevator);
+                elevators.set(i, prevElevator);
+                swapped = true;
+                if (i == elevators.size()-1 && swapped) {
+                    i = 1;
+                    swapped = false;
+                }
+            }
+        }
  	}
 
     void callElevator(Floor floor) {
-        List<Elevator> elevatorsSorted = sortElevators(floor);
+        List<Elevator> elevatorsSorted = getAvailableElevators(floor);
+        // call the elevators
     }
 
     void step() {

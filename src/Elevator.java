@@ -31,6 +31,10 @@ public class Elevator {
 		}
     }
 
+    int distanceFromFloor(Floor floor) {
+        return Math.abs(this.position - floor.getNumber());
+    }
+
     @Override
     public String toString() {
         return "Elevator = [\n\t name: " + this.name + "\n\t position: floor " + this.position + "\n]";
