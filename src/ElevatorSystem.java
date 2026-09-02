@@ -84,6 +84,31 @@ class ElevatorSystem {
 		}
     }
 
+    void sortElevators(List<Elevator> elevators, Floor floor) {
+        // look at each elevator in the list and the previous. swap them if the current is closer than the previous
+        boolean swapped = false;
+        for (int i = 1; i < elevators.size(); i++) {
+            Elevator prevElevator = elevators.get(i-1);
+            Elevator currElevator = elevators.get(i);
+            int currElevatorDistance = currElevator.distanceFromFloor(floor);
+            int prevElevatorDistance = prevElevator.distanceFromFloor(floor);
+            if ((currElevatorDistance < prevElevatorDistance)
+                ||
+                (currElevatorDistance == prevElevatorDistance &&
+                 currElevator.getName() < prevElevator.getName()))
+                {
+                    elevators.set(i-1, currElevator);
+                    elevators.set(i, prevElevator);
+                    swapped = true;
+                }
+
+            if (i == elevators.size()-1 && swapped) {
+                i = 0;
+                swapped = false;
+            }
+        }
+ 	}
+
     List<Elevator> getAvailableElevators(Floor floor) {
 		List<Elevator> available = new ArrayList<>();
 		for (Elevator elevator : elevators) {
@@ -96,33 +121,12 @@ class ElevatorSystem {
 		return available;
     }
 
-    void sortElevators(List<Elevator> elevators, Floor floor) {
-        boolean swapped = false;
-        for (int i = 1; i < elevators.size(); i++) {
-            Elevator prevElevator = elevators.get(i-1);
-            Elevator currElevator = elevators.get(i);
-            int currElevatorDistance = currElevator.distanceFromFloor(floor);
-            int prevElevatorDistance = prevElevator.distanceFromFloor(floor);
-            if ((currElevatorDistance < prevElevatorDistance)
-                ||
-                (currElevatorDistance == prevElevatorDistance &&
-                 currElevator.getName() < prevElevator.getName()))
-                {
-
-                elevators.set(i-1, currElevator);
-                elevators.set(i, prevElevator);
-                swapped = true;
-                if (i == elevators.size()-1 && swapped) {
-                    i = 1;
-                    swapped = false;
-                }
-            }
-        }
- 	}
-
     void callElevator(Floor floor) {
         List<Elevator> elevatorsSorted = getAvailableElevators(floor);
         // call the elevators
+        for (Elevator elevator : elevatorsSorted) {
+            System.out.println(elevator);
+        }
     }
 
     void step() {
@@ -130,6 +134,6 @@ class ElevatorSystem {
     }
 
     void exit() {
-        throw new UnsupportedOperationException("Not implemented yet.");
     }
+
 }

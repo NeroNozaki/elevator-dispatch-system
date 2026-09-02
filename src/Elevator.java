@@ -9,7 +9,7 @@ public class Elevator {
     }
     private char name;
     private int position;
-    private Direction direction;
+    private Direction direction = Direction.IDLE;
     private List<Integer> destinations = new ArrayList<>();
 
     Elevator(char name) {
@@ -38,6 +38,7 @@ public class Elevator {
     @Override
     public String toString() {
         return "Elevator = [\n\t name: " + this.name + "\n\t position: floor " + this.position + "\n]";
+        // return this.position + ", ";
     }
 }
 
