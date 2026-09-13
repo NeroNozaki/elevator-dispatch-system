@@ -16,11 +16,9 @@ public class Elevator {
         this.name = name;
         this.position = (int)(Math.random()*20)+1;
     }
-
     char getName() {
         return this.name;
     }
-
     Boolean isMovingAwayFrom(Floor floor) {
 		if (this.direction == Direction.UP) {
 			return this.position > floor.getNumber();
@@ -30,9 +28,49 @@ public class Elevator {
 			return false;
 		}
     }
-
     int distanceFromFloor(Floor floor) {
         return Math.abs(this.position - floor.getNumber());
+    }
+    void addToDestinations(int floor) {
+        switch (direction) {
+        case Direction.UP:
+            for (int i = 0; i < destinations.size(); i++) {
+                if (floor < destinations.get(i)) {
+                    destinations.add(i, floor);
+                    return;
+                }
+            }
+            destinations.add(floor);
+            break;
+        case Direction.DOWN:
+            for (int i = 0; i < destinations.size(); i++) {
+                if (floor > destinations.get(i)) {
+                    destinations.add(i, floor);
+                    return;
+                }
+            }
+            destinations.add(floor);
+            break;
+        case Direction.IDLE:
+            destinations.add(floor);
+            break;
+        }
+    }
+    void move() {
+        switch(direction) {
+        case Direction.UP:
+            position++;
+            break;
+        case Direction.DOWN:
+            position--;
+            break;
+        case Direction.IDLE:
+            break;
+        }
+    }
+
+    boolean hasArrived() {
+        return !destinations.isEmpty() && destinations.get(0) == position;
     }
 
     @Override

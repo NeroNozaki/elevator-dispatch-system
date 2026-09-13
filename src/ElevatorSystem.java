@@ -122,18 +122,26 @@ class ElevatorSystem {
     }
 
     void callElevator(Floor floor) {
-        List<Elevator> elevatorsSorted = getAvailableElevators(floor);
-        // call the elevators
-        for (Elevator elevator : elevatorsSorted) {
-            System.out.println(elevator);
-        }
+        // this could error because getAvailableElevators() can return an empty list.
+        Elevator chosenElevator = getAvailableElevators(floor).get(0);
+        chosenElevator.addToDestinations(floor.getNumber());
+    }
+
+    void handleArrival() {
+        // deal with the elevator arriving.
+        // remove current floor from destinations.
+        // look at the floor requests and at to destination list
+        // ONLY if they match current direction.
+        return;
     }
 
     void step() {
+        // TODO: handle the edge case where a request can't be assigned to an IDLE Elevator
+        // which is when multiple Requests with the same level of priority get come in the same step().
+        // to do this, choose the Request from the closest Floor, prioritizing Floors below in ties.
         throw new UnsupportedOperationException("Not implemented yet.");
     }
 
     void exit() {
     }
-
 }
