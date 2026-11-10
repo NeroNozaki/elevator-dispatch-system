@@ -3,14 +3,12 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 class ElevatorSystem {
-    List<Elevator> elevators;
-    List<Floor> floors;
+    List<Elevator> elevators = new ArrayList<>();
+    List<Floor> floors = new ArrayList<>();
 
     ElevatorSystem(int elevatorNum, int floorNum) {
-        elevators = new ArrayList<>();
-        floors = new ArrayList<>();
         for (int i = 0; i < elevatorNum; i++) {
-            elevators.add(new Elevator((char)('A'+i)));
+            elevators.add(new Elevator((char)('A'+i), floorNum));
             // System.out.println("Elevator " + elevators.get(i).getName() + " created.");
         }
         for (int i = 0; i < floorNum; i++) {
@@ -23,12 +21,15 @@ class ElevatorSystem {
         System.out.println("Elevator dispatch system simulation.");
         System.out.println("Type in requests in this format [1, 2]");
         System.out.println("where 1 is where the request comes from and 2 is the destination");
-        System.out.println("Press Enter with nothing typed in to avance one step");
+        System.out.println("Press Enter with nothing typed in to advance one step");
 
-        handleInput();
+        boolean running = true;
+        while (running) {
+            running = handleInput();
+        }
     }
 
-    void handleInput() {
+    boolean handleInput() {
         Scanner scanner = new Scanner(System.in);
         String input = scanner.nextLine();
         scanner.close();
@@ -37,16 +38,17 @@ class ElevatorSystem {
         switch (command.type) {
         case STEP:
             step();
-            break;
+            return true;
         case REQUEST:
             makeRequest(command.request);
-            break;
+            return true;
         case EXIT:
             exit();
-            break;
+            return false;
 
         default:
-            break;
+            System.err.println("Some bullshit has ocurred.");
+            return false;
         }
     }
 
@@ -127,19 +129,40 @@ class ElevatorSystem {
         chosenElevator.addToDestinations(floor.getNumber());
     }
 
-    void handleArrival() {
+    void handleArrival(Elevator elevator) {
         // deal with the elevator arriving.
         // remove current floor from destinations.
-        // look at the floor requests and at to destination list
+        // look at the floor requests and add to destination list
         // ONLY if they match current direction.
-        return;
+        Floor floor = floors.get(elevator.getPosition()-1);
+        elevator.removeDestination(floor);
+        Request[] nonMatching = elevator.receiveRequests(floor.getRequests());
+        floor.removeRequests(nonMatching);
+        floor.toggleWaiting();
     }
 
     void step() {
         // TODO: handle the edge case where a request can't be assigned to an IDLE Elevator
-        // which is when multiple Requests with the same level of priority get come in the same step().
+        // which is when multiple Requests with the same level of priority come in the same step().
         // to do this, choose the Request from the closest Floor, prioritizing Floors below in ties.
-        throw new UnsupportedOperationException("Not implemented yet.");
+
+        checkFloors();
+        for (Elevator e : elevators) {
+            if (e.isBlocked()) { continue; }
+            e.move();
+            e.setBlocked(false);
+            if (e.hasArrived()) {
+                handleArrival(e);
+                e.setBlocked(true);
+            }
+        }
+        printSystem();
+        handleInput();
+    }
+
+    void printSystem() {
+        System.out.println("Visualization unimplemented.");
+        System.out.println("We're working on it boss!");
     }
 
     void exit() {
