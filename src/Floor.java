@@ -2,9 +2,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Floor {
-    private int number;
+    private final int number;
     private List<Request> requests = new ArrayList<>();
-    private Boolean waiting = false;
+    private boolean waiting = false;
 
     Floor(int number) {
         this.number = number;
@@ -15,23 +15,27 @@ public class Floor {
     void addRequest(Request request) {
         requests.add(request);
     }
-    Boolean hasRequests() {
+    boolean hasRequests() {
         return !this.requests.isEmpty();
     }
-    Boolean isWaiting() {
+    boolean isWaiting() {
         return this.waiting;
     }
-    void toggleWaiting() {
-        waiting = !waiting;
+    void setWaiting(boolean value) {
+        this.waiting = value;
     }
 
     List<Request> getRequests() {
-        return this.requests;
+        List<Request> requests = this.requests;
+        return requests;
     }
 
-    void removeRequests(Request[] requests) {
-        for (Request r : requests) {
-            this.requests.remove(r);
+    void removeRequests(List<Request> requests, boolean matching) {
+        if (matching) {
+            this.requests.removeAll(requests);
+        } else {
+            this.requests.retainAll(requests);
         }
     }
+
 }

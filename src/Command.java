@@ -3,6 +3,7 @@ public class Command {
         STEP,
         REQUEST,
         EXIT,
+        INVALID,
     }
     Type type;
     String request;

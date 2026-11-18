@@ -1,2 +1,6 @@
-out/
+*out/
 test/
+.tuios.tape
+*.sh
+src/Test.java
+TODO.md

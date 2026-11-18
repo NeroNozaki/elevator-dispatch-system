@@ -7,15 +7,18 @@ public class Elevator {
         IDLE,
         DOWN,
     }
-    private char name;
+    private final char name;
     private int position;
     private Direction direction = Direction.IDLE;
     private List<Integer> destinations = new ArrayList<>();
     private boolean blocked = false;
+    private final int max;
 
     Elevator(char name, int max) {
         this.name = name;
         this.position = (int)(Math.random()*max)+1;
+        if (max <= 0) throw new IllegalArgumentException("max must be greater than 0.");
+        this.max = max;
     }
 
     char getName() { return this.name; }
@@ -41,53 +44,66 @@ public class Elevator {
     }
 
     void addToDestinations(int floor) {
-        // this should sort the destinations list based on the direction the elevator is moving
-        // ascending for UP, descending for DOWN
-
-        if (this.destinations.isEmpty()) { decideDirection(); }
-
-        switch (direction) {
-        case Direction.UP:
-            for (int i = 0; i < destinations.size(); i++) {
-                if (floor < destinations.get(i)) {
-                    destinations.add(i, floor);
-                    return;
-                }
-            }
-            destinations.add(floor);
-            break;
-        case Direction.DOWN:
-            for (int i = 0; i < destinations.size(); i++) {
-                if (floor > destinations.get(i)) {
-                    destinations.add(i, floor);
-                    return;
-                }
-            }
-            destinations.add(floor);
-            break;
-        case Direction.IDLE:
-            destinations.add(floor);
-            break;
+        if (!isValidFloor(floor)) {
+            throw new IllegalArgumentException("number of floor " + floor + " is invalid on request to elevator " + this.name);
         }
+        if (this.direction == Direction.IDLE) {
+            this.destinations.add(floor);
+        } else {
+            int index = 0;
+            while (index < this.destinations.size()) {
+                int existing = this.destinations.get(index);
+                boolean insertHere = this.direction == Direction.UP
+                    ? floor < existing
+                    : floor > existing;
+                if (insertHere) {
+                    break;
+                }
+                index++;
+            }
+            this.destinations.add(index, floor);
+        }
+
+        decideDirection();
     }
 
     void decideDirection() {
-        int firstStop = this.destinations.getFirst();
-        if (firstStop > this.position) {
-            this.direction = Direction.UP;
-        } else if (firstStop < this.position) {
-            this.direction = Direction.DOWN;
-        } else {
-            this.direction = Direction.IDLE;
+        decideDirection(List.of());
+    }
+
+    void decideDirection(List<Request> pendingRequests) {
+        if (!this.destinations.isEmpty()) {
+            int firstStop = this.destinations.getFirst();
+            if (firstStop > this.position) {
+                this.direction = Direction.UP;
+                return;
+            }
+            if (firstStop < this.position) {
+                this.direction = Direction.DOWN;
+                return;
+            }
         }
+
+        if (!pendingRequests.isEmpty()) {
+            this.direction = directionOf(pendingRequests.getFirst());
+            return;
+        }
+
+        this.direction = Direction.IDLE;
     }
 
     void move() {
         switch(direction) {
         case Direction.UP:
+            if (position < max) {
+                throw new IllegalStateException("Elevator " + name + " at top floor " + position + " cannot move UP");
+            }
             position++;
             break;
         case Direction.DOWN:
+            if (position > 1) {
+                throw new IllegalStateException("Elevator " + name + " at bottom floor " + position + " cannot move DOWN");
+            }
             position--;
             break;
         case Direction.IDLE:
@@ -100,12 +116,13 @@ public class Elevator {
     }
 
     void removeDestination(Floor floor) {
-        if (destinations.contains(floor.getNumber())) {
-            destinations.remove(floor.getNumber());
-        }
+        this.destinations.remove(Integer.valueOf(floor.getNumber()));
+        decideDirection();
     }
 
-    Request[] receiveRequests(List<Request> requests) {
+    List<Request> receiveRequests(List<Request> requests) {
+        decideDirection(requests);
+
         List<Request> nonMatching = new ArrayList<>();
         for (Request r : requests) {
             if (directionMatches(r)) {
@@ -114,17 +131,44 @@ public class Elevator {
             }
             nonMatching.add(r);
         }
-        return nonMatching.toArray(Request[]::new);
+        return nonMatching;
+    }
+
+    boolean canServe(List<Request> requests) {
+        if (requests.isEmpty()) {
+            return false;
+        }
+
+        if (this.direction == Direction.IDLE) {
+            return true;
+        }
+
+        for (Request request : requests) {
+            if (directionMatches(request)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private Direction directionOf(Request request) {
+        if (request.destination > request.floor) {
+            return Direction.UP;
+        }
+
+        return Direction.DOWN;
     }
 
     private boolean directionMatches(Request request) {
-        if (
-        request.destination > this.position && this.direction == Direction.UP ||
-        request.destination < this.position && this.direction == Direction.DOWN
-    )
-    { return true; }
+        return switch (this.direction) {
+            case UP, DOWN -> this.direction == directionOf(request);
+            case IDLE -> false;
+        };
+    }
 
-        return false;
+    private boolean isValidFloor(int floorNum) {
+        return floorNum > 0 && floorNum <= max;
     }
 
     @Override
