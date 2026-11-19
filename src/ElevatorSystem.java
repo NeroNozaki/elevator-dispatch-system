@@ -9,20 +9,36 @@ public class ElevatorSystem {
     private final Scanner scanner = new Scanner(System.in);
 
     ElevatorSystem(int elevatorNum, int floorNum) {
-        if (floorNum <= 0 || elevatorNum <= 0) {
-            throw new IllegalArgumentException("System must be created with a positive number of elevators and floors.");
+        this(floorNum, createRandomElevators(elevatorNum, floorNum));
+    }
+
+    ElevatorSystem(int floorNum, List<Elevator> initialElevators) {
+        if (floorNum <= 0) throw new IllegalArgumentException("floorNum must be greater than 0.");
+        if (initialElevators.isEmpty()) throw new IllegalArgumentException("at least one elevator is required.");
+
+        for (Elevator e : initialElevators) {
+            if (e.getPosition() < 1 || e.getPosition() > floorNum) throw new IllegalArgumentException("Elevator " + e.getName() + " starts outside the building.");
+
+            if (e.getMax() != floorNum) throw new IllegalArgumentException("Elevator maximum value must match the number of floors.");
         }
 
-        for (int i = 0; i < elevatorNum; i++) {
-            elevators.add(new Elevator((char) ('A' + i), floorNum));
-            // System.out.println("Elevator " + elevators.get(i).getName() + " created.");
-        }
+        this.elevators.addAll(initialElevators);
 
         for (int i = 0; i < floorNum; i++) {
-            floors.add(new Floor(i + 1));
-            // System.out.println("Floor number " + floors.get(i).getNumber() + "
-            // created.");
+            this.floors.add(new Floor(i + 1));
         }
+    }
+
+    private static List<Elevator> createRandomElevators(int elevatorNum, int floorNum) {
+        if (elevatorNum <= 0) throw new IllegalArgumentException("elevatorNum must be greater than 0.");
+
+        List<Elevator> result = new ArrayList<>();
+
+        for (int i = 0; i < elevatorNum; i++) {
+            result.add(new Elevator((char)('A' + i), floorNum));
+        }
+
+        return result;
     }
 
     void begin() {
@@ -98,6 +114,11 @@ public class ElevatorSystem {
     boolean makeRequest(String request) {
         String[] parts = request.trim().split("\\s*,\\s*");
 
+        if (parts.length != 2) {
+            System.err.println("Request must be in the form [floor, destination].");
+            return false;
+        }
+
         int floor, destination;
         try {
             floor = Integer.parseInt(parts[0].trim());
@@ -116,7 +137,7 @@ public class ElevatorSystem {
         try {
             finalRequest = new Request(floor, destination);
         } catch (IllegalArgumentException e) {
-            System.err.println("Floor number cannot be the same as destination and neither can be <= 0.");
+            System.err.println("Floor number cannot be the same as destination and neither can be <=0.");
             return false;
         }
 
@@ -140,25 +161,27 @@ public class ElevatorSystem {
         }
     }
 
-    void sortElevators(List<Elevator> elevators, Floor floor) {
+    void sortElevators(List<Elevator> availableElevators, Floor floor) {
         // look at each elevator in the list and the previous. swap them if the current
         // is closer than the previous
         boolean swapped = false;
-        for (int i = 1; i < elevators.size(); i++) {
-            Elevator prevElevator = elevators.get(i - 1);
-            Elevator currElevator = elevators.get(i);
+        for (int i = 1; i < availableElevators.size(); i++) {
+            Elevator prevElevator = availableElevators.get(i - 1);
+            Elevator currElevator = availableElevators.get(i);
+
             int currElevatorDistance = currElevator.distanceFromFloor(floor);
             int prevElevatorDistance = prevElevator.distanceFromFloor(floor);
+
             if ((currElevatorDistance < prevElevatorDistance)
                     ||
                     (currElevatorDistance == prevElevatorDistance &&
                             currElevator.getName() < prevElevator.getName())) {
-                elevators.set(i - 1, currElevator);
-                elevators.set(i, prevElevator);
+                availableElevators.set(i - 1, currElevator);
+                availableElevators.set(i, prevElevator);
                 swapped = true;
             }
 
-            if (i == elevators.size() - 1 && swapped) {
+            if (i == availableElevators.size() - 1 && swapped) {
                 i = 0;
                 swapped = false;
             }
@@ -209,8 +232,8 @@ public class ElevatorSystem {
 
         Floor floor = floors.get(elevator.getPosition() - 1);
         elevator.removeDestination(floor);
-        List<Request> nonMatching = elevator.receiveRequests(floor.getRequests());
-        floor.removeRequests(nonMatching, false);
+        List<Request> matching = elevator.receiveRequests(floor.getRequests());
+        floor.removeRequests(matching);
         floor.setWaiting(false);
     }
 

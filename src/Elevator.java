@@ -15,10 +15,27 @@ public class Elevator {
     private final int max;
 
     Elevator(char name, int max) {
+        this(name, max, randomPosition(max));
+    }
+
+    static Elevator at(char name, int maxFloor, int position) {
+        return new Elevator(name, maxFloor, position);
+    }
+
+    private Elevator(char name, int maxFloor, int position) {
+        if (maxFloor <= 0) throw new IllegalArgumentException("max must be greater than 0.");
+
+        if (position < 1 || position > maxFloor) throw new IllegalArgumentException("position must be between 1 and " + maxFloor);
+
         this.name = name;
-        this.position = (int)(Math.random()*max)+1;
-        if (max <= 0) throw new IllegalArgumentException("max must be greater than 0.");
-        this.max = max;
+        this.max = maxFloor;
+        this.position = position;
+    }
+
+    private static int randomPosition(int maxFloor) {
+        if (maxFloor <= 0) throw new IllegalArgumentException("maxFloor must be greater than 0.");
+
+        return (int)(Math.random() * maxFloor) + 1;
     }
 
     char getName() { return this.name; }
@@ -28,6 +45,8 @@ public class Elevator {
     boolean isBlocked() { return this.blocked; }
 
     void setBlocked(boolean value) { this.blocked = value; }
+
+    int getMax() { return this.max; }
 
     boolean isMovingAwayFrom(Floor floor) {
 		if (this.direction == Direction.UP) {
@@ -95,13 +114,13 @@ public class Elevator {
     void move() {
         switch(direction) {
         case Direction.UP:
-            if (position < max) {
+            if (position >= max) {
                 throw new IllegalStateException("Elevator " + name + " at top floor " + position + " cannot move UP");
             }
             position++;
             break;
         case Direction.DOWN:
-            if (position > 1) {
+            if (position <= 1) {
                 throw new IllegalStateException("Elevator " + name + " at bottom floor " + position + " cannot move DOWN");
             }
             position--;
@@ -123,15 +142,15 @@ public class Elevator {
     List<Request> receiveRequests(List<Request> requests) {
         decideDirection(requests);
 
-        List<Request> nonMatching = new ArrayList<>();
+        List<Request> matching = new ArrayList<>();
         for (Request r : requests) {
             if (directionMatches(r)) {
+                matching.add(r);
                 addToDestinations(r.destination);
                 continue;
             }
-            nonMatching.add(r);
         }
-        return nonMatching;
+        return matching;
     }
 
     boolean canServe(List<Request> requests) {

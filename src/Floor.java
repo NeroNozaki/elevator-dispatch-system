@@ -26,16 +26,21 @@ public class Floor {
     }
 
     List<Request> getRequests() {
-        List<Request> requests = this.requests;
+        List<Request> requests = new ArrayList<>();
+
+        for (Request r : this.requests) {
+            requests.add(r);
+        }
+
         return requests;
     }
 
-    void removeRequests(List<Request> requests, boolean matching) {
-        if (matching) {
-            this.requests.removeAll(requests);
-        } else {
-            this.requests.retainAll(requests);
-        }
+    void removeRequests(List<Request> requests) {
+        this.requests.removeAll(requests);
+    }
+
+    void retainRequests(List<Request> requests) {
+        this.requests.retainAll(requests);
     }
 
 }

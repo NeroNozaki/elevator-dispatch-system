@@ -9,4 +9,11 @@ public class Request {
         this.floor = floor;
         this.destination = destination;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Request other)) { return false; }
+
+        return this.floor == other.floor && this.destination == other.destination;
+    }
 }

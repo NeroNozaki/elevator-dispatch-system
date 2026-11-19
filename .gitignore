@@ -2,5 +2,5 @@
 test/
 .tuios.tape
 *.sh
-src/Test.java
 TODO.md
+REFACTOR_PLAN.md
