@@ -6,6 +6,8 @@ public class Command {
         INVALID,
     }
     Type type;
-    String request;
+    int floor;
+    int destination;
+    String error;
 }
 

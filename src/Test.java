@@ -29,6 +29,16 @@ public class Test {
         runTest("floorGetRequestsReturnsCopy", Test::floorGetRequestsReturnsCopy, failures);
         runTest("floorRemoveRequestsRemovesAccepted", Test::floorRemoveRequestsRemovesAccepted, failures);
         runTest("requestEqualityUsesFields", Test::requestEqualityUsesFields, failures);
+        runTest("requestMakerCreatesValidRequest", Test::requestMakerCreatesValidRequest, failures);
+        runTest("requestMakerRejectsOutOfRange", Test::requestMakerRejectsOutOfRange, failures);
+        runTest("requestMakerRejectsSameFloor", Test::requestMakerRejectsSameFloor, failures);
+        runTest("commandParserParsesStep", Test::commandParserParsesStep, failures);
+        runTest("commandParserParsesBracketedRequest", Test::commandParserParsesBracketedRequest, failures);
+        runTest("commandParserParsesUnbracketedRequest", Test::commandParserParsesUnbracketedRequest, failures);
+        runTest("commandParserRejectsMalformedRequest", Test::commandParserRejectsMalformedRequest, failures);
+        runTest("commandParserRejectsOverflow", Test::commandParserRejectsOverflow, failures);
+        runTest("elevatorSystemSubmitRequestAddsToFloor", Test::elevatorSystemSubmitRequestAddsToFloor, failures);
+        runTest("elevatorSystemSubmitRequestRejectsInvalidRequest", Test::elevatorSystemSubmitRequestRejectsInvalidRequest, failures);
         runTest("elevatorMovesTowardDestination", Test::elevatorMovesTowardDestination, failures);
         runTest("elevatorStopsAtTopBoundary", Test::elevatorStopsAtTopBoundary, failures);
         runTest("elevatorStopsAtBottomBoundary", Test::elevatorStopsAtBottomBoundary, failures);
@@ -176,6 +186,90 @@ public class Test {
         check(
             !new Request(3, 5).equals(new Request(3, 6)),
             "requests with different destinations should not be equal");
+    }
+
+    private static void requestMakerCreatesValidRequest() {
+        Request request = new RequestMaker(20).create(3, 5);
+
+        checkEquals(3, request.floor, "request floor");
+        checkEquals(5, request.destination, "request destination");
+    }
+
+    private static void requestMakerRejectsOutOfRange() {
+        RequestMaker maker = new RequestMaker(20);
+
+        expectThrows(
+            IllegalArgumentException.class,
+            () -> maker.create(0, 5),
+            "floor below 1");
+
+        expectThrows(
+            IllegalArgumentException.class,
+            () -> maker.create(3, 21),
+            "destination above floor count");
+    }
+
+    private static void requestMakerRejectsSameFloor() {
+        expectThrows(
+            IllegalArgumentException.class,
+            () -> new RequestMaker(20).create(5, 5),
+            "floor matching destination");
+    }
+
+    private static void commandParserParsesStep() {
+        Command command = new CommandParser().parse("   ");
+
+        checkEquals(Command.Type.STEP, command.type, "blank command type");
+    }
+
+    private static void commandParserParsesBracketedRequest() {
+        Command command = new CommandParser().parse("[3, 7]");
+
+        checkEquals(Command.Type.REQUEST, command.type, "bracketed command type");
+        checkEquals(3, command.floor, "bracketed floor");
+        checkEquals(7, command.destination, "bracketed destination");
+    }
+
+    private static void commandParserParsesUnbracketedRequest() {
+        Command command = new CommandParser().parse(" 4 , 9 ");
+
+        checkEquals(Command.Type.REQUEST, command.type, "unbracketed command type");
+        checkEquals(4, command.floor, "unbracketed floor");
+        checkEquals(9, command.destination, "unbracketed destination");
+    }
+
+    private static void commandParserRejectsMalformedRequest() {
+        Command command = new CommandParser().parse("3, 7, 9");
+
+        checkEquals(Command.Type.INVALID, command.type, "malformed command type");
+        check(command.error != null, "malformed command should include an error");
+    }
+
+    private static void commandParserRejectsOverflow() {
+        Command command = new CommandParser().parse("999999999999, 2");
+
+        checkEquals(Command.Type.INVALID, command.type, "overflow command type");
+    }
+
+    private static void elevatorSystemSubmitRequestAddsToFloor() {
+        ElevatorSystem system = new ElevatorSystem(20, List.of(Elevator.at('A', 20, 1)));
+
+        system.submitRequest(3, 7);
+
+        List<Request> requests = system.getFloor(3).getRequests();
+        checkEquals(1, requests.size(), "request count");
+        checkEquals(new Request(3, 7), requests.get(0), "submitted request");
+    }
+
+    private static void elevatorSystemSubmitRequestRejectsInvalidRequest() {
+        ElevatorSystem system = new ElevatorSystem(20, List.of(Elevator.at('A', 20, 1)));
+
+        expectThrows(
+            IllegalArgumentException.class,
+            () -> system.submitRequest(0, 5),
+            "floor outside system");
+
+        checkEquals(0, system.getFloor(1).getRequests().size(), "invalid request count");
     }
 
     private static void elevatorMovesTowardDestination() {

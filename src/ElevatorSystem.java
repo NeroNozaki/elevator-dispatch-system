@@ -1,12 +1,10 @@
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 public class ElevatorSystem {
     private final List<Elevator> elevators = new ArrayList<>();
     private final List<Floor> floors = new ArrayList<>();
-    private final Scanner scanner = new Scanner(System.in);
+    private final RequestMaker requests;
 
     ElevatorSystem(int elevatorNum, int floorNum) {
         this(floorNum, createRandomElevators(elevatorNum, floorNum));
@@ -27,6 +25,8 @@ public class ElevatorSystem {
         for (int i = 0; i < floorNum; i++) {
             this.floors.add(new Floor(i + 1));
         }
+
+        this.requests = new RequestMaker(floorNum);
     }
 
     private static List<Elevator> createRandomElevators(int elevatorNum, int floorNum) {
@@ -41,112 +41,27 @@ public class ElevatorSystem {
         return result;
     }
 
-    void begin() {
-        System.out.println("Elevator dispatch system simulation.");
-        System.out.println("Type in requests in this format [1, 2]");
-        System.out.println("where 1 is where the request comes from and 2 is the destination");
-        System.out.println("Press Enter with nothing typed in to advance one step");
-        System.out.println();
-        System.out.println();
+    int getFloorCount() { return floors.size(); }
 
-        printSystem();
-        boolean running = true;
-        try {
-            while (running)
-                running = handleInput();
-        } catch (NoSuchElementException e) {
-            System.out.println("Input stream ended.");
-        } finally {
-            scanner.close();
+    List<Elevator> getElevators() { return List.copyOf(elevators); }
+
+
+    void submitRequest(int floor, int destination) {
+        Request request = requests.create(floor, destination);
+
+        if (request.floor > floors.size() || request.destination > floors.size()) {
+            throw new IllegalStateException("Request refers to a floor outside this system.");
         }
+
+        floors.get(request.floor - 1).addRequest(request);
     }
 
-    boolean handleInput() {
-        if (!scanner.hasNextLine()) {
-            return false;
-        }
-        String input = scanner.nextLine();
-        Command command = parseInput(input);
-
-        switch (command.type) {
-            case STEP:
-                step();
-                break;
-            case REQUEST:
-                if (!makeRequest(command.request)) {
-                    System.err.println("Request ignored, simulation continues.");
-                }
-                break;
-            case EXIT:
-                return false;
-            case INVALID:
-                break;
-
-            default:
-                System.err.println("Some bullshit has ocurred.");
-                break;
+    Floor getFloor(int number) {
+        if (number < 1 || number > floors.size()) {
+            throw new IllegalArgumentException("Floor " + number + " is outside this system.");
         }
 
-        return true;
-    }
-
-    Command parseInput(String input) {
-        Command command = new Command();
-        String trimmed = input.trim();
-
-        if (trimmed.isEmpty()) {
-            command.type = Command.Type.STEP;
-        } else if (trimmed.equals("exit")) {
-            command.type = Command.Type.EXIT;
-        } else if (trimmed.matches("\\[\\s*\\d+\\s*,\\s*\\d+\\s*\\]")) {
-            command.type = Command.Type.REQUEST;
-            command.request = trimmed.substring(1, trimmed.length() - 1).trim();
-        } else if (trimmed.matches("\\d+\\s*,\\s*\\d+")) {
-            command.type = Command.Type.REQUEST;
-            command.request = trimmed;
-        } else {
-            command.type = Command.Type.INVALID;
-        }
-
-        return command;
-    }
-
-    boolean makeRequest(String request) {
-        String[] parts = request.trim().split("\\s*,\\s*");
-
-        if (parts.length != 2) {
-            System.err.println("Request must be in the form [floor, destination].");
-            return false;
-        }
-
-        int floor, destination;
-        try {
-            floor = Integer.parseInt(parts[0].trim());
-            destination = Integer.parseInt(parts[1].trim());
-        } catch (NumberFormatException e) {
-            System.err.println("Floor numbers are too large or malformed.");
-            return false;
-        }
-
-        if (!isValidFloor(floor) || !isValidFloor(destination)) {
-            System.err.println("Numbers must be between 1 and " + floors.size());
-            return false;
-        }
-
-        Request finalRequest;
-        try {
-            finalRequest = new Request(floor, destination);
-        } catch (IllegalArgumentException e) {
-            System.err.println("Floor number cannot be the same as destination and neither can be <=0.");
-            return false;
-        }
-
-        floors.get(floor - 1).addRequest(finalRequest);
-        return true;
-    }
-
-    private boolean isValidFloor(int n) {
-        return n >= 1 && n <= floors.size();
+        return floors.get(number - 1);
     }
 
     void checkFloors() {
@@ -190,24 +105,21 @@ public class ElevatorSystem {
 
     List<Elevator> getAvailableElevators(Floor floor) {
         List<Elevator> available = new ArrayList<>();
-		for (Elevator elevator : elevators) {
-			if (!elevator.isMovingAwayFrom(floor) && elevator.canServe(floor.getRequests())) {
-				available.add(elevator);
-			}
-		}
+        for (Elevator elevator : elevators) {
+            if (!elevator.isMovingAwayFrom(floor) && elevator.canServe(floor.getRequests())) {
+                available.add(elevator);
+            }
+        }
         sortElevators(available, floor);
 
         return available;
     }
 
     boolean callElevator(Floor floor) {
-        // this could error because getAvailableElevators() can return an empty list.
 
         List<Elevator> availableElevators = getAvailableElevators(floor);
 
-        if (availableElevators.isEmpty()) {
-            return false;
-        }
+        if (availableElevators.isEmpty()) { return false; }
 
         Elevator chosenElevator = availableElevators.get(0);
         try {
@@ -257,12 +169,7 @@ public class ElevatorSystem {
                 e.setBlocked(true);
             }
         }
-        printSystem();
     }
 
-    void printSystem() {
-        System.out.println("Visualization unimplemented.");
-        System.out.println("We're working on it boss!");
-    }
 
 }

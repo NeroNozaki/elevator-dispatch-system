@@ -4,7 +4,7 @@ public class Request {
 
     Request(int floor, int destination) {
         if (floor == destination || floor <= 0 || destination <= 0) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Floor number cannot be the same as destination and neither can be <=0.");
         }
         this.floor = floor;
         this.destination = destination;
