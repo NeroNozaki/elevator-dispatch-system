@@ -48,6 +48,8 @@ public class Elevator {
 
     int getMax() { return this.max; }
 
+    Direction getDirection() { return this.direction; }
+
     boolean isMovingAwayFrom(Floor floor) {
 		if (this.direction == Direction.UP) {
 			return this.position > floor.getNumber();

@@ -44,6 +44,7 @@ public class ElevatorSystem {
     int getFloorCount() { return floors.size(); }
 
     List<Elevator> getElevators() { return List.copyOf(elevators); }
+    List<Floor> getFloors() { return List.copyOf(floors); }
 
 
     void submitRequest(int floor, int destination) {

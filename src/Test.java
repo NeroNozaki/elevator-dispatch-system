@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Scanner;
 
 public class Test {
     private interface TestCase {
@@ -39,6 +40,15 @@ public class Test {
         runTest("commandParserRejectsOverflow", Test::commandParserRejectsOverflow, failures);
         runTest("elevatorSystemSubmitRequestAddsToFloor", Test::elevatorSystemSubmitRequestAddsToFloor, failures);
         runTest("elevatorSystemSubmitRequestRejectsInvalidRequest", Test::elevatorSystemSubmitRequestRejectsInvalidRequest, failures);
+        runTest("buildFramePadsFloorLabels", Test::buildFramePadsFloorLabels, failures);
+        runTest("buildFramePadsHundredFloors", Test::buildFramePadsHundredFloors, failures);
+        runTest("buildFrameShowsRequestsOnBothSides", Test::buildFrameShowsRequestsOnBothSides, failures);
+        runTest("buildFrameShowsElevatorDirection", Test::buildFrameShowsElevatorDirection, failures);
+        runTest("buildFrameHasNoEscapeCodes", Test::buildFrameHasNoEscapeCodes, failures);
+        runTest("renderFrameErasesEachLine", Test::renderFrameErasesEachLine, failures);
+        runTest("arrivalClearsAcceptedFloorRequests", Test::arrivalClearsAcceptedFloorRequests, failures);
+        runTest("demosLoadAllScenarios", Test::demosLoadAllScenarios, failures);
+        runTest("unknownDemoRejected", Test::unknownDemoRejected, failures);
         runTest("elevatorMovesTowardDestination", Test::elevatorMovesTowardDestination, failures);
         runTest("elevatorStopsAtTopBoundary", Test::elevatorStopsAtTopBoundary, failures);
         runTest("elevatorStopsAtBottomBoundary", Test::elevatorStopsAtBottomBoundary, failures);
@@ -270,6 +280,106 @@ public class Test {
             "floor outside system");
 
         checkEquals(0, system.getFloor(1).getRequests().size(), "invalid request count");
+    }
+
+    private static void buildFramePadsFloorLabels() {
+        ElevatorSystem system = new ElevatorSystem(20, List.of(Elevator.at('A', 20, 1)));
+        String frame = new Simulation(system, new Scanner("")).buildFrame();
+
+        check(frame.contains("20 | "), "top floor label");
+        check(frame.contains("01 | "), "bottom floor label");
+        check(frame.contains("A–"), "idle arrow");
+    }
+
+    private static void buildFramePadsHundredFloors() {
+        ElevatorSystem system = new ElevatorSystem(100, List.of(Elevator.at('A', 100, 1)));
+        String frame = new Simulation(system, new Scanner("")).buildFrame();
+
+        check(frame.contains("100 | "), "top floor label");
+        check(frame.contains("001 | "), "bottom floor label");
+    }
+
+    private static void buildFrameShowsRequestsOnBothSides() {
+        ElevatorSystem system = new ElevatorSystem(20, List.of(Elevator.at('A', 20, 1)));
+        system.submitRequest(3, 7);
+
+        String frame = new Simulation(system, new Scanner("")).buildFrame();
+
+        check(frame.contains("03 | "), "left floor label");
+        check(frame.contains("03: [07]"), "right floor label and request");
+    }
+
+    private static void buildFrameShowsElevatorDirection() {
+        Elevator elevator = Elevator.at('A', 20, 5);
+        elevator.addToDestinations(10);
+
+        ElevatorSystem system = new ElevatorSystem(20, List.of(elevator));
+        String frame = new Simulation(system, new Scanner("")).buildFrame();
+
+        check(frame.contains("A↑"), "up arrow");
+    }
+
+    private static void buildFrameHasNoEscapeCodes() {
+        ElevatorSystem system = new ElevatorSystem(20, List.of(Elevator.at('A', 20, 1)));
+        String frame = new Simulation(system, new Scanner("")).buildFrame();
+
+        check(!frame.contains("\033"), "frame should be plain text");
+    }
+
+    private static void renderFrameErasesEachLine() {
+        ElevatorSystem system = new ElevatorSystem(20, List.of(Elevator.at('A', 20, 1)));
+        Simulation simulation = new Simulation(system, new Scanner(""));
+
+        int lineCount = simulation.buildFrame().split("\n", -1).length;
+        String rendered = simulation.renderFrame();
+        int eraseCount = rendered.split("\033\\[K", -1).length - 1;
+
+        checkEquals(lineCount, eraseCount, "erase sequence count");
+        check(rendered.contains("\033[?25h"), "cursor should be shown");
+    }
+
+    private static void arrivalClearsAcceptedFloorRequests() {
+        Elevator elevator = Elevator.at('A', 10, 1);
+        ElevatorSystem system = new ElevatorSystem(10, List.of(elevator));
+        system.submitRequest(1, 5);
+
+        system.step();
+
+        checkEquals(0, system.getFloor(1).getRequests().size(), "floor 1 request count");
+        checkEquals(Elevator.Direction.UP, elevator.getDirection(), "elevator direction");
+
+        String frame = new Simulation(system, new Scanner("")).buildFrame();
+        check(!frame.contains("01: [05]"), "accepted request should leave the frame");
+    }
+
+    private static void demosLoadAllScenarios() {
+        int[] expectedCounts = {1, 2, 2, 4, 8};
+
+        for (int demo = 1; demo <= expectedCounts.length; demo++) {
+            ElevatorSystem system = new ElevatorSystem(20, List.of(Elevator.at('A', 20, 1)));
+            DemoCatalogue.load(demo, system);
+
+            checkEquals(expectedCounts[demo - 1], totalRequests(system), "demo " + demo + " request count");
+        }
+    }
+
+    private static void unknownDemoRejected() {
+        ElevatorSystem system = new ElevatorSystem(20, List.of(Elevator.at('A', 20, 1)));
+
+        expectThrows(
+            IllegalArgumentException.class,
+            () -> DemoCatalogue.load(99, system),
+            "unknown demo");
+    }
+
+    private static int totalRequests(ElevatorSystem system) {
+        int total = 0;
+
+        for (Floor floor : system.getFloors()) {
+            total += floor.getRequests().size();
+        }
+
+        return total;
     }
 
     private static void elevatorMovesTowardDestination() {
