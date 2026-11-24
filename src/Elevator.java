@@ -93,6 +93,13 @@ public class Elevator {
     }
 
     void decideDirection(List<Request> pendingRequests) {
+        // if destinations is not empty, look at the first destination
+        // if it's above current position, direction = UP.
+        // if it's below, direction = DOWN.
+        // if it is empty, look at the pending requests and make the
+        // same decision based on the direction of the request.
+        // if both are empty, set to idle.
+
         if (!this.destinations.isEmpty()) {
             int firstStop = this.destinations.getFirst();
             if (firstStop > this.position) {
@@ -156,6 +163,10 @@ public class Elevator {
     }
 
     boolean canServe(List<Request> requests) {
+        // determine if the elevator can serve a certain request.
+        // if it's idle, it can serve any incoming request.
+        // if it's not idle, can only serve if the direction matches.
+
         if (requests.isEmpty()) {
             return false;
         }

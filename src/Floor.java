@@ -9,18 +9,23 @@ public class Floor {
     Floor(int number) {
         this.number = number;
     }
+
     int getNumber() {
         return this.number;
     }
+
     void addRequest(Request request) {
         requests.add(request);
     }
+
     boolean hasRequests() {
         return !this.requests.isEmpty();
     }
+
     boolean isWaiting() {
         return this.waiting;
     }
+
     void setWaiting(boolean value) {
         this.waiting = value;
     }
@@ -42,5 +47,4 @@ public class Floor {
     void retainRequests(List<Request> requests) {
         this.requests.retainAll(requests);
     }
-
 }
